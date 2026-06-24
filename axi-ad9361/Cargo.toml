@@ -1,0 +1,12 @@
+[package]
+name = "axi-ad9361"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+derive-mmio = "0.6"
+bitbybit = "2"
+static_assertions = "1.1"
+arbitrary-int = "2"
+
+defmt = { version = "1", optional = true }
