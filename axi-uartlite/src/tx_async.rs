@@ -212,7 +212,8 @@ impl TxAsync {
     ///
     /// The user MUST ensure that the `Drop` method of all futures generated with this driver
     /// is called on transfer cancellation. By default, this does not require any special handling.
-    pub unsafe fn new(tx: Tx, waker_idx: usize) -> Result<Self, InvalidWakerIndex> {
+    /// This case was considered exotic enough to not justify an `unsafe` API.
+    pub fn new(tx: Tx, waker_idx: usize) -> Result<Self, InvalidWakerIndex> {
         if waker_idx >= NUM_WAKERS {
             return Err(InvalidWakerIndex(waker_idx));
         }
