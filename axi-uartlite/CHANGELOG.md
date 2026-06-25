@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 # [unreleased]
 
+- Removed `unsafe` for Async TX constructor again, the special case does not warrant an `unsafe`
+  attribute.
+
 # [v0.2.1] 2026-06-08
 
 - Fix for MSRV: v1.87.
