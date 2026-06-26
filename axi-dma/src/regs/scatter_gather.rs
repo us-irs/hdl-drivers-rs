@@ -178,11 +178,12 @@ pub fn configure_descriptors_cyclic(descriptors: &mut [Descriptor]) {
             .next_descriptor_pointer_lower_word
             .set(addr_of_first_descriptor as u32);
     } else if core::mem::size_of::<usize>() == 8 {
+        let addr = addr_of_first_descriptor as u64;
         last_descriptor
             .next_descriptor_pointer_lower_word
-            .set(addr_of_first_descriptor as u32);
+            .set(addr as u32);
         last_descriptor
             .next_descriptor_pointer_upper_word
-            .set((addr_of_first_descriptor >> 32) as u32);
+            .set((addr >> 32) as u32);
     }
 }
