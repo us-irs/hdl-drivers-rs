@@ -7,9 +7,9 @@ pub mod fields {
         forbid_overlaps
     )]
     pub struct Reset {
-        /// Clock enabled by default.
+        /// Set to 0x0 to enable the clock. Clock enabled by default.
         #[bit(2, rw)]
-        clock_enable_n: bool,
+        clock_disable: bool,
         /// Software must write 1 to bring up core.
         #[bit(1, rw)]
         mmcm_reset_n: bool,
@@ -289,6 +289,42 @@ pub mod dac {
             #[bits(0..=7, rw)]
             rate: u8,
         }
+
+        #[bitbybit::bitenum(u4, exhaustive = false)]
+        #[derive(Debug, PartialEq, Eq)]
+        #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+        pub enum DataSource {
+            /// Internal tone (DDS).
+            InternalTone = 0x00,
+            /// Pattern (SED).
+            Pattern = 0x01,
+            // Input Data (DMA (?)).
+            InputData = 0x02,
+            Zero = 0x03,
+            InvertedPn7 = 0x04,
+            InvertedPn15 = 0x05,
+            Pn7 = 0x06,
+            Pn15 = 0x07,
+            LoopbackDataAdc = 0x08,
+            /// Device specific.
+            PnX = 0x09,
+            /// Device specific.
+            NibbleRamp = 0x0A,
+            /// Device specific.
+            BitRam16Bit = 0x0B,
+        }
+
+        #[bitbybit::bitfield(
+            u32,
+            default = 0,
+            debug,
+            defmt_bitfields(feature = "defmt"),
+            forbid_overlaps
+        )]
+        pub struct ChannelControl7 {
+            #[bits(0..=3, rw)]
+            data_source: Option<DataSource>,
+        }
     }
 
     #[derive(derive_mmio::Mmio)]
@@ -300,7 +336,7 @@ pub mod dac {
         control4: u32,
         control5: u32,
         control6: u32,
-        control7: u32,
+        control7: regs::ChannelControl7,
         control8: u32,
         user_control3: u32,
         user_control4: u32,
