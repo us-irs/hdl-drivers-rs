@@ -22,7 +22,19 @@ impl Dac {
     /// - The driver performs **volatile** reads and writes to the provided address.
     pub fn new(base_addr_ip_core: usize) -> Self {
         let mmio = regs::Registers::new_dac_block(base_addr_ip_core);
-        Dac { mmio }
+        let mut dac = Dac { mmio };
+        dac.enable();
+        dac
+    }
+
+    pub fn enable(&mut self) {
+        self.mmio.write_reset(
+            crate::regs::fields::Reset::builder()
+                .with_clock_enable_n(true)
+                .with_mmcm_reset_n(true)
+                .with_reset_n(true)
+                .build(),
+        );
     }
 
     pub fn regs(&mut self) -> &mut regs::dac::MmioRegisters<'static> {
