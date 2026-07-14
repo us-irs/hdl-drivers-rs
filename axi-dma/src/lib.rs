@@ -32,7 +32,7 @@ static WAKERS: [AtomicWaker; NUM_WAKERS] = [const { AtomicWaker::new() }; NUM_WA
 static SIMPLE_TRANSFER_DONE: [AtomicBool; NUM_WAKERS] =
     [const { AtomicBool::new(false) }; NUM_WAKERS];
 
-pub struct SimpleDma {
+pub struct DmaController {
     regs: regs::direct_register::MmioRegisters<'static>,
 }
 
@@ -42,12 +42,16 @@ pub struct SimpleDma {
 )]
 pub struct InvalidBufferLengthError;
 
-impl SimpleDma {
-    /// Create a new simple AXI DMA controller peripheral driver.
+#[derive(Debug, thiserror::Error)]
+#[error("invalid waker slot index: {0}")]
+pub struct InvalidWakerIndex(pub usize);
+
+impl DmaController {
+    /// Create a new AXI DMA controller peripheral driver.
     ///
     /// # Safety
     ///
-    /// - The `base_addr` must be a valid memory-mapped register address of an AXI UART Lite peripheral.
+    /// - The `base_addr` must be a valid memory-mapped register address of an AXI DMA peripheral.
     /// - Dereferencing an invalid or misaligned address results in **undefined behavior**.
     /// - The caller must ensure that no other code concurrently modifies the same peripheral registers
     ///   in an unsynchronized manner to prevent data races.
@@ -62,6 +66,31 @@ impl SimpleDma {
         Self { regs }
     }
 
+    /// Create an owned blocking writer for MM2S simple transfers.
+    pub fn into_simple_writer(self) -> SimpleDmaWriter {
+        SimpleDmaWriter { regs: self.regs }
+    }
+
+    /// Create an owned async writer for MM2S simple transfers.
+    pub fn into_simple_writer_async(
+        self,
+        waker_index: usize,
+    ) -> Result<SimpleDmaWriterAsync, InvalidWakerIndex> {
+        if waker_index >= NUM_WAKERS {
+            return Err(InvalidWakerIndex(waker_index));
+        }
+        Ok(SimpleDmaWriterAsync {
+            regs: self.regs,
+            waker_index,
+        })
+    }
+}
+
+pub struct SimpleDmaWriter {
+    regs: regs::direct_register::MmioRegisters<'static>,
+}
+
+impl SimpleDmaWriter {
     /// Blocking write function using DMA.
     ///
     /// Pleaes note that the source address must be aligned to the MM2S memory map data width
@@ -76,33 +105,106 @@ impl SimpleDma {
     }
 }
 
-pub struct SimpleDmaAsync {
+impl embedded_io_async::ErrorType for SimpleDmaWriter {
+    type Error = InvalidBufferLengthError;
+}
+
+impl embedded_io::Write for SimpleDmaWriter {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.write(buf)?;
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+}
+
+pub struct SimpleDmaWriterAsync {
     regs: regs::direct_register::MmioRegisters<'static>,
     waker_index: usize,
 }
 
-impl SimpleDmaAsync {
-    pub async fn write(&mut self, buf: &[u8]) -> Result<(), InvalidBufferLengthError> {
-        SIMPLE_TRANSFER_DONE[self.waker_index].store(false, portable_atomic::Ordering::Relaxed);
+impl core::fmt::Debug for SimpleDmaWriterAsync {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SimpleDmaWriterAsync")
+            .field("waker_index", &self.waker_index)
+            .finish()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SimpleDmaTransferToken {
+    base_addr: usize,
+    waker_index: usize,
+}
+
+impl SimpleDmaTransferToken {
+    pub fn base_addr(&self) -> usize {
+        self.base_addr
+    }
+
+    pub fn waker_index(&self) -> usize {
+        self.waker_index
+    }
+}
+
+impl SimpleDmaWriterAsync {
+    pub async fn write(
+        &mut self,
+        buf: &[u8],
+    ) -> Result<SimpleDmaTransferToken, InvalidBufferLengthError> {
+        let token = SimpleDmaTransferToken {
+            // SAFETY: Only converted to primitive address
+            base_addr: unsafe { self.regs.ptr() } as usize,
+            waker_index: self.waker_index,
+        };
+        SIMPLE_TRANSFER_DONE[token.waker_index].store(false, portable_atomic::Ordering::Relaxed);
         write(&mut self.regs, buf)?;
         poll_fn(move |cx| {
-            WAKERS[self.waker_index].register(cx.waker());
+            WAKERS[token.waker_index].register(cx.waker());
 
-            if SIMPLE_TRANSFER_DONE[self.waker_index].load(portable_atomic::Ordering::Relaxed) {
+            if SIMPLE_TRANSFER_DONE[token.waker_index].load(portable_atomic::Ordering::Relaxed) {
                 return core::task::Poll::Ready(());
             }
             core::task::Poll::Pending
         })
         .await;
-        Ok(())
+        Ok(token)
     }
 
-    pub unsafe fn on_interrupt(waker_index: usize, base_addr: usize) {
+    pub unsafe fn on_interrupt(token: &SimpleDmaTransferToken) {
+        unsafe { Self::on_interrut_unchecked(token.waker_index, token.base_addr) };
+    }
+
+    pub unsafe fn on_interrut_unchecked(waker_index: usize, base_addr: usize) {
         let mut regs = unsafe { regs::direct_register::Registers::new_mmio_at(base_addr) };
         if regs.read_mm2s_status().completion_interrupt() {
             SIMPLE_TRANSFER_DONE[waker_index].store(true, portable_atomic::Ordering::Relaxed);
+            WAKERS[waker_index].wake();
             regs.write_mm2s_status(regs::fields::Status::ZERO.with_completion_interrupt(true));
         }
+    }
+}
+
+impl embedded_io_async::Error for InvalidBufferLengthError {
+    fn kind(&self) -> embedded_io::ErrorKind {
+        embedded_io::ErrorKind::Other
+    }
+}
+
+impl embedded_io_async::ErrorType for SimpleDmaWriterAsync {
+    type Error = InvalidBufferLengthError;
+}
+
+impl embedded_io_async::Write for SimpleDmaWriterAsync {
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.write(buf).await?;
+        Ok(buf.len())
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 

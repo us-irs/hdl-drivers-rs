@@ -43,6 +43,8 @@ dependencies = [
  "defmt",
  "derive-mmio 0.7.0",
  "embassy-sync",
+ "embedded-io",
+ "embedded-io-async",
  "portable-atomic",
  "static_assertions",
  "thiserror",
