@@ -30,7 +30,7 @@ dependencies = [
  "arbitrary-int",
  "bitbybit",
  "defmt",
- "derive-mmio",
+ "derive-mmio 0.6.1",
  "static_assertions",
 ]
 
@@ -41,8 +41,11 @@ dependencies = [
  "arbitrary-int",
  "bitbybit",
  "defmt",
- "derive-mmio",
+ "derive-mmio 0.7.0",
+ "embassy-sync",
+ "portable-atomic",
  "static_assertions",
+ "thiserror",
  "vcell",
 ]
 
@@ -54,7 +57,7 @@ dependencies = [
  "arbitrary-int",
  "bitbybit",
  "critical-section",
- "derive-mmio",
+ "derive-mmio 0.6.1",
  "embassy-sync",
  "embedded-hal-async",
  "embedded-hal-nb",
@@ -74,7 +77,7 @@ dependencies = [
  "arbitrary-int",
  "bitbybit",
  "critical-section",
- "derive-mmio",
+ "derive-mmio 0.7.0",
  "embassy-sync",
  "embedded-hal-nb",
  "embedded-io",
@@ -157,7 +160,17 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "005a6dabf68a87a460d3cb9b8e2fd5de3f474fc34e8d9451f5a1b6db518da143"
 dependencies = [
- "derive-mmio-macro",
+ "derive-mmio-macro 0.6.1",
+ "rustversion",
+]
+
+[[package]]
+name = "derive-mmio"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47489b818beeb4de9536dd034671feb768ca6453227e4deaf56883750431db58"
+dependencies = [
+ "derive-mmio-macro 0.7.0",
  "rustversion",
 ]
 
@@ -168,6 +181,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "584dc8e12e4aeb88000c2be8ef7db15657c817fba3e77999a24807d1efcdeefa"
 dependencies = [
  "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "derive-mmio-macro"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12b6d4985d9657a9c8b7aa5afd3a7869b6d6740f7574d9b7bdb90689a4d1d6e8"
+dependencies = [
  "proc-macro2",
  "quote",
  "syn",
@@ -302,6 +326,12 @@ checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "portable-atomic"
+version = "1.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
 
 [[package]]
 name = "proc-macro-error-attr2"
