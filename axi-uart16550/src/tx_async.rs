@@ -15,7 +15,11 @@
 //! - `8-wakers`
 //! - `16-wakers`
 //! - `32-wakers`
-use core::{cell::RefCell, convert::Infallible, sync::atomic::AtomicBool};
+#[cfg(not(feature = "portable-atomic"))]
+use core::sync::atomic::AtomicBool;
+use core::{cell::RefCell, convert::Infallible};
+#[cfg(feature = "portable-atomic")]
+use portable_atomic::AtomicBool;
 
 use critical_section::Mutex;
 use embassy_sync::waitqueue::AtomicWaker;
@@ -45,9 +49,11 @@ pub const NUM_WAKERS: usize = 16;
 /// 32 wakers.
 #[cfg(feature = "32-wakers")]
 pub const NUM_WAKERS: usize = 32;
-static UART_TX_WAKERS: [AtomicWaker; NUM_WAKERS] = [const { AtomicWaker::new() }; NUM_WAKERS];
+
+static WAKERS: [AtomicWaker; NUM_WAKERS] = [const { AtomicWaker::new() }; NUM_WAKERS];
 static TX_CONTEXTS: [Mutex<RefCell<TxContext>>; NUM_WAKERS] =
     [const { Mutex::new(RefCell::new(TxContext::new())) }; NUM_WAKERS];
+
 // Completion flag. Kept outside of the context structure as an atomic to avoid
 // critical section.
 static TX_DONE: [AtomicBool; NUM_WAKERS] = [const { AtomicBool::new(false) }; NUM_WAKERS];
@@ -94,7 +100,7 @@ pub fn on_interrupt_tx(tx: &mut Tx, waker_slot: usize) {
         // Transfer is done.
         TX_DONE[waker_slot].store(true, core::sync::atomic::Ordering::Relaxed);
         tx.disable_interrupt();
-        UART_TX_WAKERS[waker_slot].wake();
+        WAKERS[waker_slot].wake();
         return;
     }
     // Safety: We documented that the user provided slice must outlive the future, so we convert
@@ -172,7 +178,7 @@ impl Future for TxFuture<'_, '_> {
         self: core::pin::Pin<&mut Self>,
         cx: &mut core::task::Context<'_>,
     ) -> core::task::Poll<Self::Output> {
-        UART_TX_WAKERS[self.waker_idx].register(cx.waker());
+        WAKERS[self.waker_idx].register(cx.waker());
         if TX_DONE[self.waker_idx].swap(false, core::sync::atomic::Ordering::Relaxed) {
             let progress = critical_section::with(|cs| {
                 let mut ctx = TX_CONTEXTS[self.waker_idx].borrow(cs).borrow_mut();

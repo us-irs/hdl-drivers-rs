@@ -9,7 +9,7 @@ repository = "https://egit.irs.uni-stuttgart.de/rust/axi-uart16550"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-derive-mmio = "0.6"
+derive-mmio = "0.7"
 bitbybit = "2"
 arbitrary-int = "2"
 nb = "1"
@@ -23,6 +23,7 @@ embedded-io = "0.7"
 embedded-io-async = "0.7"
 embassy-sync = "0.8"
 raw-buffer = "0.1"
+portable-atomic = { version = "1", optional = true }
 
 [features]
 default = ["1-waker"]

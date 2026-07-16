@@ -2,7 +2,7 @@ name: ci
 on: [push, pull_request]
 
 jobs:
-  check:
+  build:
     name: Check build
     strategy:
       matrix:
@@ -11,7 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo check
+      - run: cargo build
+      - run: cargo build --features portable-atomic
 
   msrv:
     name: Check MSRV

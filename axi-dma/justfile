@@ -15,22 +15,11 @@ check:
 embedded:
   cargo build --target armv7a-none-eabihf
 
-test:
-  cargo nextest r
-  cargo test --doc
-
 build:
   cargo build
-  cargo build --features portable-atomic
 
 docs:
   RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --generate-link-to-definition" cargo +nightly doc --no-deps
 
 docs-html:
   RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --generate-link-to-definition" cargo +nightly doc --open --no-deps
-
-coverage:
-  cargo llvm-cov nextest
-
-coverage-html:
-  cargo llvm-cov nextest --html --open

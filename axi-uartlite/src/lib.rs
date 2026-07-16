@@ -13,6 +13,8 @@
 //! If asynchronous TX operations are used, the number of wakers  which defaults to 1 waker can
 //! also be configured. The [tx_async] module provides more details on the meaning of this number.
 //!
+//! - `portable-atomic` enables the use of the [`portable-atomic`](https://docs.rs/portable-atomic/latest/portable_atomic/)
+//!   crate for atomic operations. This is useful for platforms that do not support the standard library's atomic types.
 //! - `1-waker` which is also a `default` feature
 //! - `2-wakers`
 //! - `4-wakers`

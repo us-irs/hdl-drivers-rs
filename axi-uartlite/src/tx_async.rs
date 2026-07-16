@@ -15,10 +15,13 @@
 //! - `8-wakers`
 //! - `16-wakers`
 //! - `32-wakers`
-use core::{cell::RefCell, convert::Infallible, marker::PhantomData, sync::atomic::AtomicBool};
-
+#[cfg(not(feature = "portable-atomic"))]
+use core::sync::atomic::AtomicBool;
+use core::{cell::RefCell, convert::Infallible, marker::PhantomData};
 use critical_section::Mutex;
 use embassy_sync::waitqueue::AtomicWaker;
+#[cfg(feature = "portable-atomic")]
+use portable_atomic::AtomicBool;
 use raw_buffer::RawBufSlice;
 
 use crate::{FIFO_DEPTH, Tx};
