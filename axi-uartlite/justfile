@@ -21,6 +21,7 @@ test:
 
 build:
   cargo build
+  cargo build --features portable-atomic
 
 docs:
   RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --generate-link-to-definition" cargo +nightly doc --no-deps

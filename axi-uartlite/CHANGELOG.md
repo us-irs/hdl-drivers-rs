@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Removed `unsafe` for Async TX constructor again, the special case does not warrant an `unsafe`
   attribute.
+- Adds optional `portable-atomic` feature for portable atomic operations
 
 # [v0.2.1] 2026-06-08
 
