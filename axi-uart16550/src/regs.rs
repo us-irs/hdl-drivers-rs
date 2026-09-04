@@ -91,7 +91,7 @@ pub mod fields {
     #[bitbybit::bitfield(u32, default = 0x0, defmt_bitfields(feature = "defmt"))]
     pub struct FifoControl {
         /// RX FIFO trigger level.
-        #[bits(4..=5, rw)]
+        #[bits(6..=7, rw)]
         rx_fifo_trigger: RxFifoTrigger,
         /// DMA mode select.
         #[bit(3, rw)]

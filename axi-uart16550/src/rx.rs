@@ -230,6 +230,11 @@ impl Rx {
         }
         errors
     }
+
+    /// Read the LSR register.
+    pub fn read_lsr(&self) -> LineStatus {
+        self.regs.read_lsr()
+    }
 }
 
 impl embedded_hal_nb::serial::ErrorType for Rx {
