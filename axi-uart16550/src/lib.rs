@@ -43,7 +43,7 @@ pub use rx::*;
 pub const FIFO_DEPTH: usize = 16;
 
 /// Default RX FIFO trigger level.
-pub const DEFAULT_RX_TRIGGER_LEVEL: RxFifoTrigger = RxFifoTrigger::OneByte;
+pub const DEFAULT_RX_TRIGGER_LEVEL: RxFifoTrigger = RxFifoTrigger::EightBytes;
 
 /// Clock configuration structure.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
